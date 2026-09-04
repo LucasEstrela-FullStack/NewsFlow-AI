@@ -3,9 +3,9 @@
 from collections.abc import Callable
 from datetime import datetime
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
 from xml.etree import ElementTree
 
+from app.http_client import download_text
 from app.youtube.models import YouTubeVideoMetadata
 
 __all__ = ["YouTubeAtomFeed", "YouTubeFeedError"]
@@ -26,7 +26,7 @@ class YouTubeAtomFeed:
         self,
         download_feed: Callable[[str], str] | None = None,
     ) -> None:
-        self._download_feed = download_feed or _download_feed
+        self._download_feed = download_feed or download_text
 
     def fetch_recent_videos(self, channel_id: str) -> list[YouTubeVideoMetadata]:
         normalized_channel_id = channel_id.strip()
@@ -53,12 +53,6 @@ class YouTubeAtomFeed:
             channel_name=_required_text(entry, f"{_atom('author')}/{_atom('name')}"),
             published_at=_published_at(entry),
         )
-
-
-def _download_feed(url: str) -> str:
-    request = Request(url, headers={"User-Agent": "NewFlow/1.0"})
-    with urlopen(request, timeout=15) as response:
-        return response.read().decode("utf-8")
 
 
 def _required_text(entry: ElementTree.Element, path: str) -> str:
