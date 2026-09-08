@@ -406,6 +406,12 @@ Execute:
 docker compose up --build
 ```
 
+Para iniciar somente o PostgreSQL local:
+
+```bash
+docker compose up -d database
+```
+
 Para executar em segundo plano:
 
 ```bash
