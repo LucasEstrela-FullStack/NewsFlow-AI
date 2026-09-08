@@ -17,6 +17,7 @@ class Settings:
     secret_key: str = "development-only"
     host: str = "127.0.0.1"
     port: int = 5000
+    database_url: str = ""
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -29,6 +30,7 @@ class Settings:
             secret_key=os.getenv("SECRET_KEY", "development-only"),
             host=os.getenv("HOST", "127.0.0.1"),
             port=_read_port(),
+            database_url=os.getenv("DATABASE_URL", ""),
         )
 
 
