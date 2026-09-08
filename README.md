@@ -379,7 +379,11 @@ Exemplo:
 ```env
 OPENAI_API_KEY=your_openai_api_key
 
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/newflow
+DATABASE_URL=postgresql://postgres:<POSTGRES_PASSWORD>@localhost:5433/newflow
+
+POSTGRES_DB=newflow
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=<choose-a-local-password>
 
 FLASK_ENV=development
 FLASK_DEBUG=1
