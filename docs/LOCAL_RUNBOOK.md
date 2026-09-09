@@ -92,22 +92,33 @@ YOUTUBE_CHANNEL_IDS=
 vírgula. O segundo é opcional. Mantenha os delimitadores entre `<...>` como
 referências no exemplo: substitua-os pelos valores locais no arquivo `.env`.
 
-## 4. Iniciar o PostgreSQL local
+## 4. Iniciar o stack completo com Docker
 
-O Compose deste projeto contém somente o banco de dados:
+O Compose inicia a aplicação web e o PostgreSQL:
 
 ```bash
-docker compose up -d database
+docker compose up --build -d
 docker compose ps
 ```
 
-Espere o serviço `database` aparecer como saudável. O banco expõe a porta
-`5433` no computador local, mapeada para a porta `5432` do container.
+Espere os serviços `app` e `database` aparecerem como saudáveis. A aplicação
+fica disponível na porta `5000`; o banco expõe a porta `5433` no computador
+local, mapeada para a porta `5432` do container. Dentro do Compose, a aplicação
+usa o hostname `database`, sem depender da URL de localhost presente no `.env`.
+
+Se a porta `5000` já estiver ocupada, escolha outra porta sem editar o Compose:
+
+```powershell
+$env:WEB_PORT = "5001"
+docker compose up --build -d
+```
+
+No Linux/macOS, use `WEB_PORT=5001 docker compose up --build -d`.
 
 Para acompanhar o início do banco:
 
 ```bash
-docker compose logs -f database
+docker compose logs -f app database
 ```
 
 Para parar o banco preservando os dados do volume:
@@ -116,19 +127,16 @@ Para parar o banco preservando os dados do volume:
 docker compose down
 ```
 
-## 5. Executar a aplicação web
+## 5. Validar a aplicação web
 
-Com o ambiente virtual ativo, execute:
-
-```bash
-python run.py
-```
-
-Em outro terminal, valide o endpoint de saúde:
+Valide o endpoint de saúde após o Compose iniciar:
 
 ```bash
 curl http://127.0.0.1:5000/health
 ```
+
+Substitua `5000` pelo valor definido em `WEB_PORT` quando usar uma porta
+alternativa.
 
 Resultado esperado:
 
@@ -138,6 +146,13 @@ Resultado esperado:
 
 Esse endpoint confirma que o processo Flask está disponível. Ele não executa
 coleta, não envia e-mail e não exige credenciais SMTP.
+
+Para executar a aplicação diretamente pelo Python, sem o container web, mantenha
+somente o banco ativo com `docker compose up -d database` e execute:
+
+```bash
+python run.py
+```
 
 ## 6. Executar o digest diário
 
