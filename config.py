@@ -23,6 +23,9 @@ class Settings:
     smtp_username: str = ""
     smtp_password: str = ""
     smtp_sender: str = ""
+    daily_digest_recipient: str = ""
+    daily_digest_interests: tuple[str, ...] = ()
+    youtube_channel_ids: tuple[str, ...] = ()
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -41,6 +44,9 @@ class Settings:
             smtp_username=os.getenv("SMTP_USERNAME", ""),
             smtp_password=os.getenv("SMTP_PASSWORD", ""),
             smtp_sender=os.getenv("SMTP_SENDER", ""),
+            daily_digest_recipient=os.getenv("DAILY_DIGEST_RECIPIENT", "").strip(),
+            daily_digest_interests=_read_list("DAILY_DIGEST_INTERESTS"),
+            youtube_channel_ids=_read_list("YOUTUBE_CHANNEL_IDS"),
         )
 
 
@@ -64,3 +70,8 @@ def _read_port(name: str, *, default: int) -> int:
         raise ValueError(f"{name} must be between 1 and 65535")
 
     return port
+
+
+def _read_list(name: str) -> tuple[str, ...]:
+    values = (value.strip() for value in os.getenv(name, "").split(","))
+    return tuple(dict.fromkeys(value for value in values if value))

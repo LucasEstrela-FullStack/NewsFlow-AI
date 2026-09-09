@@ -26,3 +26,31 @@ services:
         sync: false
       - key: SMTP_SENDER
         sync: false
+  - type: cron
+    name: newflow-ai-daily-digest
+    runtime: python
+    plan: 0.5c-512mb
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m app.jobs.daily_digest
+    schedule: "0 12 * * *"
+    envVars:
+      - key: NEWFLOW_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_SENDER
+        sync: false
+      - key: DAILY_DIGEST_RECIPIENT
+        sync: false
+      - key: DAILY_DIGEST_INTERESTS
+        sync: false
+      - key: YOUTUBE_CHANNEL_IDS
+        sync: false
