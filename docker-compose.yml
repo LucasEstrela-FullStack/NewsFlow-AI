@@ -1,4 +1,22 @@
 services:
+  app:
+    build:
+      context: .
+    environment:
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER must be set in .env}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}@database:5432/${POSTGRES_DB:?POSTGRES_DB must be set in .env}
+    ports:
+      - "${WEB_PORT:-5000}:5000"
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:5000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   database:
     image: postgres:16-alpine
     environment:
@@ -14,6 +32,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
 volumes:
   postgres_data:
