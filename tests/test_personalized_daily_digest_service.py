@@ -1,0 +1,61 @@
+"""Behavior tests for personalized daily digest generation."""
+
+from collections.abc import Sequence
+from datetime import UTC, datetime
+
+from app.aggregator import ArticleAggregator, UserProfile
+from app.digest import DigestService
+from app.news import NewsArticle
+from app.personalized_digest import PersonalizedDailyDigestService
+from app.pipeline import CollectionPipeline
+from app.youtube.models import YouTubeVideo
+
+
+class StaticNewsSource:
+    """Deterministic source with general and profile-relevant articles."""
+
+    def fetch_recent_articles(self) -> list[NewsArticle]:
+        return [
+            NewsArticle(
+                article_id="company-update",
+                title="Company update",
+                url="https://example.com/company-update",
+                description="General company information.",
+                category="Company",
+                published_at=datetime(2026, 9, 9, tzinfo=UTC),
+                source="OpenAI",
+            ),
+            NewsArticle(
+                article_id="agent-research",
+                title="Reliable agents research",
+                url="https://example.com/agent-research",
+                description="A research update about AI agents.",
+                category="Research",
+                published_at=datetime(2026, 9, 9, tzinfo=UTC),
+                source="Anthropic",
+            ),
+        ]
+
+
+class EmptyVideoSource:
+    """Video source that keeps the collection pipeline deterministic."""
+
+    def collect_recent_videos(self, channel_ids: Sequence[str]) -> list[YouTubeVideo]:
+        return []
+
+
+def test_generate_prioritizes_articles_matching_the_user_profile() -> None:
+    collection_pipeline = CollectionPipeline(
+        news_sources=[StaticNewsSource()],
+        video_source=EmptyVideoSource(),
+        youtube_channel_ids=[],
+    )
+    service = PersonalizedDailyDigestService(
+        collection_pipeline=collection_pipeline,
+        article_aggregator=ArticleAggregator(),
+        digest_service=DigestService(),
+    )
+
+    digest = service.generate(UserProfile(interests=("agents",)))
+
+    assert digest.index("# Reliable agents research") < digest.index("# Company update")
