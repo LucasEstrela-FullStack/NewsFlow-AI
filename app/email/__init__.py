@@ -2,5 +2,6 @@
 
 from app.email.composer import DigestEmailComposer
 from app.email.models import EmailMessage
+from app.email.service import EmailAgent
 
-__all__ = ["DigestEmailComposer", "EmailMessage"]
+__all__ = ["DigestEmailComposer", "EmailAgent", "EmailMessage"]
