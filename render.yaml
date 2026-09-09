@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: newflow-ai
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT run:application
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NEWFLOW_ENV
+        value: production
+      - key: NEWFLOW_DEBUG
+        value: "false"
+      - key: SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_SENDER
+        sync: false
