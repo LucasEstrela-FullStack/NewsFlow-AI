@@ -739,6 +739,30 @@ Deploy
 
 Variáveis sensíveis devem ser configuradas diretamente no ambiente da aplicação.
 
+### Job diário no Render
+
+O Blueprint também define o Cron Job `newflow-ai-daily-digest`. Ele executa
+`python -m app.jobs.daily_digest` uma vez por dia às **12:00 UTC** e encerra
+após enviar o digest.
+
+Configure as variáveis abaixo diretamente no serviço de Cron Job no Render:
+
+```text
+DATABASE_URL
+SMTP_HOST
+SMTP_PORT
+SMTP_USERNAME
+SMTP_PASSWORD
+SMTP_SENDER
+DAILY_DIGEST_RECIPIENT
+DAILY_DIGEST_INTERESTS
+YOUTUBE_CHANNEL_IDS
+```
+
+`DAILY_DIGEST_INTERESTS` e `YOUTUBE_CHANNEL_IDS` usam valores separados por
+vírgula. O segundo é opcional. Para testar uma execução fora do horário, use
+**Trigger Run** na página do Cron Job no painel do Render.
+
 ---
 
 # 🔒 Segurança
