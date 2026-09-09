@@ -1,1000 +1,151 @@
-# 🌊 NewFlow
+# NewFlow AI
 
-<p align="center">
-  <strong>AI-Powered News Aggregator</strong>
-</p>
+Agregador de notícias de IA que coleta feeds públicos, prioriza conteúdos por
+interesse, registra artigos no PostgreSQL e envia um digest diário por e-mail.
 
-<p align="center">
-  Agregação, processamento e personalização inteligente de notícias utilizando Inteligência Artificial.
-</p>
+O projeto é aberto para execução local e pode ser adaptado para outros
+provedores de banco, agendamento e e-mail sem acoplar as regras de negócio à
+infraestrutura.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/OpenAI-API-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI">
-  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/Docker-Container-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
-  <img src="https://img.shields.io/badge/Render-Deploy-46E3B7?style=for-the-badge&logo=render&logoColor=black" alt="Render">
-</p>
+## Funcionalidades atuais
 
----
+- Coleta notícias recentes dos feeds RSS da OpenAI e Anthropic.
+- Coleta metadados e transcrições de canais do YouTube, quando configurados.
+- Persiste artigos sem duplicação no PostgreSQL.
+- Ordena artigos pelos interesses do destinatário e gera um digest em Markdown.
+- Entrega o digest por SMTP sobre SSL.
+- Impede reenvio para o mesmo destinatário no mesmo dia e registra o resultado
+  como `sent` ou `failed`.
+- Disponibiliza `GET /health` para verificar a disponibilidade do processo web.
 
-## 📖 Sobre o projeto
-
-**NewFlow** é uma plataforma inteligente de agregação de notícias desenvolvida para coletar conteúdos de diferentes fontes, processá-los utilizando Inteligência Artificial e entregar informações relevantes de forma organizada e personalizada.
-
-O projeto combina **coleta automatizada de dados, processamento com LLMs, persistência em PostgreSQL, geração de resumos, classificação de conteúdo e automação de envio de e-mails**.
-
-A aplicação foi desenvolvida com uma abordagem próxima de um ambiente real de produção, utilizando **Docker** para desenvolvimento local e **Render** para implantação.
-
----
-
-## 🎯 Objetivos
-
-O NewFlow foi criado com os seguintes objetivos:
-
-* Coletar notícias e conteúdos de diferentes fontes.
-* Automatizar o processamento das informações.
-* Utilizar IA para interpretar e resumir conteúdos.
-* Classificar notícias de acordo com seus temas.
-* Armazenar os dados de forma estruturada.
-* Personalizar conteúdos de acordo com o perfil do usuário.
-* Gerar resumos diários.
-* Automatizar o envio de informações por e-mail.
-* Aplicar conceitos de arquitetura de software e pipelines de dados.
-* Disponibilizar a aplicação em um ambiente de produção.
-
----
-
-## ✨ Funcionalidades
-
-### 📰 Coleta de notícias
-
-O NewFlow pode trabalhar com diferentes fontes de conteúdo, permitindo centralizar informações em uma única aplicação.
-
-Exemplos:
-
-* YouTube
-* Sites de notícias
-* Feeds
-* APIs
-* Artigos
-* Outras fontes compatíveis com o pipeline
-
----
-
-### 🤖 Processamento com Inteligência Artificial
-
-Os conteúdos coletados são enviados para processamento utilizando modelos de linguagem.
-
-A IA pode:
-
-* Interpretar o conteúdo.
-* Identificar informações relevantes.
-* Classificar artigos.
-* Gerar resumos.
-* Extrair informações importantes.
-* Adaptar o conteúdo ao perfil do usuário.
-
----
-
-### 📝 Resumos automáticos
-
-O sistema transforma conteúdos extensos em informações mais objetivas.
-
-Fluxo:
+## Arquitetura
 
 ```text
-Artigo original
-      ↓
-Processamento
-      ↓
-Análise com IA
-      ↓
-Extração das informações principais
-      ↓
-Resumo
-      ↓
-Armazenamento
+RSS / YouTube
+      |
+      v
+CollectionPipeline --> PostgreSQL
+      |
+      v
+ArticleAggregator --> DigestService --> SMTP
+      |
+      v
+Digest delivery history
 ```
 
----
+As regras de aplicação dependem de portas pequenas; os adaptadores de RSS,
+YouTube, SQLAlchemy e SMTP ficam nas bordas. A composição das dependências fica
+em `app/jobs/daily_digest.py`.
 
-### 👤 Personalização
+## Requisitos
 
-O NewFlow permite considerar preferências e interesses do usuário para selecionar conteúdos mais relevantes.
+- Python 3.11 ou superior
+- Docker e Docker Compose (recomendado para o PostgreSQL local)
+- Uma conta SMTP que aceite SSL na porta configurada
 
-Exemplo:
+## Execução local
 
-```text
-Perfil do usuário
-
-Interesses:
-- Inteligência Artificial
-- Cloud Computing
-- Tecnologia
-- Desenvolvimento de Software
-
-            ↓
-
-Conteúdos coletados
-
-            ↓
-
-Classificação com IA
-
-            ↓
-
-Conteúdos relevantes
-
-            ↓
-
-Resumo personalizado
-```
-
----
-
-### 📧 Resumo diário
-
-O sistema pode gerar um **Daily Digest**, reunindo os principais conteúdos selecionados para o usuário.
-
-Exemplo:
-
-```text
-🌊 NewFlow Daily
-
-5 notícias relevantes para você
-
-01. Nova tecnologia de IA...
-02. AWS anuncia...
-03. Novo framework...
-04. OpenAI apresenta...
-05. Tendências em Cloud...
-
-Resumo gerado por IA.
-```
-
----
-
-## 🧠 Arquitetura
-
-A arquitetura inicial do NewFlow segue um pipeline de processamento:
-
-```text
-                  ┌──────────────────────┐
-                  │      FONTES          │
-                  │                      │
-                  │ YouTube / Sites / RSS│
-                  │ APIs / Artigos       │
-                  └──────────┬───────────┘
-                             │
-                             ▼
-                  ┌──────────────────────┐
-                  │      COLLECTOR       │
-                  │                      │
-                  │ Scraping / APIs      │
-                  │ Extração de conteúdo │
-                  └──────────┬───────────┘
-                             │
-                             ▼
-                  ┌──────────────────────┐
-                  │    AI PROCESSING     │
-                  │                      │
-                  │ Classificação        │
-                  │ Resumo               │
-                  │ Extração             │
-                  │ Análise              │
-                  └──────────┬───────────┘
-                             │
-                             ▼
-                  ┌──────────────────────┐
-                  │     PostgreSQL       │
-                  │                      │
-                  │ Notícias             │
-                  │ Usuários             │
-                  │ Perfis               │
-                  │ Resumos              │
-                  └──────────┬───────────┘
-                             │
-                             ▼
-                  ┌──────────────────────┐
-                  │    AGENT / PIPELINE  │
-                  │                      │
-                  │ Seleção personalizada│
-                  │ Geração do Digest    │
-                  └──────────┬───────────┘
-                             │
-                    ┌────────┴────────┐
-                    ▼                 ▼
-             ┌─────────────┐   ┌─────────────┐
-             │   E-MAIL    │   │  APLICAÇÃO  │
-             │ Daily Digest│   │   / API     │
-             └─────────────┘   └─────────────┘
-```
-
----
-
-## 🛠️ Tecnologias
-
-### Backend
-
-* Python
-* Flask
-* OpenAI API
-* Pandas
-* Requests
-* BeautifulSoup
-* PostgreSQL
-
-### Inteligência Artificial
-
-* OpenAI
-* Large Language Models
-* Prompt Engineering
-* Text Classification
-* Text Summarization
-
-### Banco de dados
-
-* PostgreSQL
-* SQL
-* Database migrations
-
-### Infraestrutura
-
-* Docker
-* Docker Compose
-* Render
-
-### Desenvolvimento
-
-* Git
-* GitHub
-* Python Virtual Environment
-* Environment Variables
-
----
-
-## 📦 Estrutura do projeto
-
-A estrutura pode ser organizada da seguinte maneira:
-
-```text
-newflow/
-│
-├── app/
-│   ├── __init__.py
-│   │
-│   ├── api/
-│   │   ├── __init__.py
-│   │   └── routes.py
-│   │
-│   ├── agents/
-│   │   ├── aggregator.py
-│   │   └── email_agent.py
-│   │
-│   ├── scrapers/
-│   │   ├── youtube.py
-│   │   ├── openai.py
-│   │   └── anthropic.py
-│   │
-│   ├── services/
-│   │   ├── pipeline.py
-│   │   ├── summarizer.py
-│   │   └── classifier.py
-│   │
-│   ├── database/
-│   │   ├── connection.py
-│   │   ├── models.py
-│   │   └── migrations/
-│   │
-│   └── utils/
-│       └── helpers.py
-│
-├── tests/
-│
-├── scripts/
-│   └── seed.py
-│
-├── .env.example
-├── .gitignore
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-├── config.py
-├── run.py
-└── README.md
-```
-
----
-
-# 🚀 Instalação
-
-## Pré-requisitos
-
-Antes de executar o projeto, certifique-se de possuir:
-
-* Python 3.11+
-* Docker
-* Docker Compose
-* Git
-* Uma API Key da OpenAI
-* PostgreSQL, caso não utilize Docker
-
----
-
-## 1. Clone o projeto
+Clone o repositório e crie o ambiente virtual:
 
 ```bash
-git clone https://github.com/seu-usuario/newflow.git
-
-cd newflow
-```
-
----
-
-## 2. Crie o ambiente virtual
-
-### Windows
-
-```bash
+git clone https://github.com/LucasEstrela-FullStack/NewsFlow-AI.git
+cd NewsFlow-AI
 python -m venv .venv
 ```
 
-```bash
-.venv\Scripts\activate
+Ative o ambiente e instale as dependências:
+
+```powershell
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
 ```
 
-### Linux / macOS
-
 ```bash
-python3 -m venv .venv
-```
-
-```bash
+# Linux/macOS
 source .venv/bin/activate
+pip install -r requirements-dev.txt
 ```
 
----
+Crie o arquivo de configuração local a partir do exemplo:
 
-## 3. Instale as dependências
-
-```bash
-pip install -r requirements.txt
+```powershell
+Copy-Item .env.example .env
 ```
 
----
+Preencha `POSTGRES_PASSWORD` e use a mesma senha no trecho
+`<POSTGRES_PASSWORD>` de `DATABASE_URL`. Para executar o digest, também
+preencha as variáveis `SMTP_*`, `DAILY_DIGEST_RECIPIENT` e
+`DAILY_DIGEST_INTERESTS`. Nunca versione o arquivo `.env`.
 
-# 🔐 Configuração das variáveis de ambiente
-
-Crie um arquivo:
-
-```text
-.env
-```
-
-Utilize o `.env.example` como referência.
-
-Exemplo:
-
-```env
-OPENAI_API_KEY=your_openai_api_key
-
-DATABASE_URL=postgresql://postgres:<POSTGRES_PASSWORD>@localhost:5433/newflow
-
-POSTGRES_DB=newflow
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=<choose-a-local-password>
-
-FLASK_ENV=development
-FLASK_DEBUG=1
-
-SECRET_KEY=your_secret_key
-
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USERNAME=your_email
-SMTP_PASSWORD=your_password
-```
-
-> ⚠️ Nunca envie o arquivo `.env` para o GitHub.
-
----
-
-# 🐳 Executando com Docker
-
-O NewFlow utiliza Docker para facilitar a configuração do ambiente de desenvolvimento.
-
-Execute:
-
-```bash
-docker compose up --build
-```
-
-Para iniciar somente o PostgreSQL local:
+Inicie apenas o banco de dados local:
 
 ```bash
 docker compose up -d database
 ```
 
-Para executar em segundo plano:
+Inicie a aplicação web e consulte a saúde do processo:
 
 ```bash
-docker compose up -d --build
+python run.py
+curl http://127.0.0.1:5000/health
 ```
 
-Verifique os containers:
-
-```bash
-docker compose ps
-```
-
-Para visualizar os logs:
-
-```bash
-docker compose logs -f
-```
-
-Para parar os serviços:
-
-```bash
-docker compose down
-```
-
----
-
-# 🗄️ Banco de dados
-
-O projeto utiliza PostgreSQL para armazenar as informações processadas.
-
-Exemplo conceitual de entidades:
-
-```text
-User
- │
- ├── Profile
- │
- └── Preferences
-
-Article
- │
- ├── Source
- ├── Category
- ├── Summary
- └── ProcessingStatus
-
-Digest
- │
- ├── User
- └── Articles
-```
-
-### Principais informações armazenadas
-
-* Usuários
-* Fontes
-* Artigos
-* Conteúdo original
-* Resumos
-* Categorias
-* Preferências
-* Histórico de processamento
-* Daily Digests
-
----
-
-# 🔄 Pipeline de processamento
-
-O pipeline é responsável por transformar conteúdos brutos em informações úteis.
-
-```text
-1. Coleta
-   ↓
-2. Validação
-   ↓
-3. Extração
-   ↓
-4. Limpeza
-   ↓
-5. Armazenamento
-   ↓
-6. Processamento com IA
-   ↓
-7. Classificação
-   ↓
-8. Resumo
-   ↓
-9. Personalização
-   ↓
-10. Daily Digest
-   ↓
-11. Envio
-```
-
----
-
-# 📰 Coleta de conteúdo
-
-Cada fonte pode possuir um serviço específico.
-
-Exemplo:
-
-```text
-scrapers/
-│
-├── youtube.py
-├── openai.py
-└── anthropic.py
-```
-
-Cada scraper é responsável por:
-
-1. Acessar a fonte.
-2. Encontrar novos conteúdos.
-3. Extrair os dados.
-4. Normalizar as informações.
-5. Retornar os conteúdos para o pipeline.
-
----
-
-# 🤖 Inteligência Artificial
-
-O NewFlow utiliza LLMs para processar os conteúdos coletados.
-
-Um fluxo simplificado:
-
-```text
-Conteúdo
-   ↓
-Prompt
-   ↓
-LLM
-   ↓
-Resposta estruturada
-   ↓
-Validação
-   ↓
-Banco de dados
-```
-
-A IA pode produzir informações como:
+Resposta esperada:
 
 ```json
-{
-  "title": "Título da notícia",
-  "category": "Technology",
-  "summary": "Resumo gerado pela IA",
-  "relevance": 0.92,
-  "topics": [
-    "Artificial Intelligence",
-    "Cloud",
-    "Software"
-  ]
-}
+{"service":"newflow","status":"ok"}
 ```
 
----
+## Digest diário
 
-# 🧩 Agentes
-
-O projeto possui uma arquitetura preparada para agentes especializados.
-
-### Aggregator Agent
-
-Responsável por:
-
-* Analisar os conteúdos disponíveis.
-* Selecionar informações relevantes.
-* Agrupar conteúdos relacionados.
-* Preparar o resumo diário.
-
-### Email Agent
-
-Responsável por:
-
-* Receber o conteúdo processado.
-* Montar o Daily Digest.
-* Formatar o e-mail.
-* Realizar o envio.
-
-Fluxo:
-
-```text
-Articles
-   ↓
-Aggregator Agent
-   ↓
-Personalized Digest
-   ↓
-Email Agent
-   ↓
-User
-```
-
----
-
-# 📊 Personalização
-
-O usuário pode possuir preferências utilizadas pelo sistema para determinar a relevância dos conteúdos.
-
-Exemplo:
-
-```json
-{
-  "user": "Lucas",
-  "interests": [
-    "AI",
-    "Cloud",
-    "Software Engineering",
-    "Cybersecurity"
-  ]
-}
-```
-
-O pipeline utiliza essas informações para melhorar a seleção dos conteúdos.
-
----
-
-# 📧 Daily Digest
-
-O Daily Digest reúne os principais conteúdos identificados pelo sistema.
-
-Exemplo:
-
-```text
-┌──────────────────────────────────────┐
-│            🌊 NewFlow                │
-│          Daily Intelligence          │
-├──────────────────────────────────────┤
-│                                      │
-│ 🤖 Artificial Intelligence            │
-│                                      │
-│ Nova tecnologia é apresentada...     │
-│                                      │
-│ ☁️ Cloud                             │
-│                                      │
-│ Empresa anuncia nova solução...      │
-│                                      │
-│ 💻 Software                          │
-│                                      │
-│ Novo framework ganha popularidade... │
-│                                      │
-└──────────────────────────────────────┘
-```
-
----
-
-# 🧪 Testes
-
-Execute os testes com:
+O comando abaixo executa uma coleta e tenta enviar um digest. Ele cria as
+tabelas necessárias se ainda não existirem.
 
 ```bash
-pytest
+python -m app.jobs.daily_digest
 ```
 
-Para executar com informações detalhadas:
+`YOUTUBE_CHANNEL_IDS` é opcional e aceita IDs de canal separados por vírgula.
+`DAILY_DIGEST_INTERESTS` também aceita valores separados por vírgula. As fontes
+RSS e o SMTP são serviços externos: configure credenciais válidas e conexão com
+a internet antes de executar o comando.
+
+Se o comando for repetido no mesmo dia para o mesmo destinatário, o histórico
+impede um segundo envio. Falhas de SMTP são registradas como `failed`, permitindo
+uma nova tentativa posterior.
+
+## Testes e verificações
 
 ```bash
-pytest -v
+python -m pytest
+python -m compileall -q app config.py
 ```
 
----
+O GitHub Actions executa a suíte automaticamente em pull requests e alterações
+na branch `main`.
 
-# 🔎 Qualidade de código
+Consulte [o guia de validação local](docs/LOCAL_RUNBOOK.md) antes de abrir uma
+pull request ou publicar uma alteração.
 
-Durante o desenvolvimento, o projeto busca manter:
+## Configuração
 
-* Separação de responsabilidades.
-* Código modular.
-* Variáveis de ambiente.
-* Tratamento de erros.
-* Validação de dados.
-* Testes automatizados.
-* Logs.
-* Estrutura preparada para escala.
+| Variável | Obrigatória para | Descrição |
+| --- | --- | --- |
+| `DATABASE_URL` | Digest | URL do PostgreSQL local ou remoto. |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Docker local | Credenciais usadas pelo Compose. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_SENDER` | Digest | Configuração de envio SMTP SSL. |
+| `DAILY_DIGEST_RECIPIENT` | Digest | E-mail que receberá o digest. |
+| `DAILY_DIGEST_INTERESTS` | Digest | Interesses separados por vírgula. |
+| `YOUTUBE_CHANNEL_IDS` | Opcional | IDs de canais separados por vírgula. |
+| `NEWFLOW_ENV`, `NEWFLOW_DEBUG`, `SECRET_KEY`, `HOST`, `PORT` | Aplicação web | Configuração do processo Flask. |
 
----
+## Limites atuais e próximos incrementos
 
-# 🌐 Deploy
+Esta primeira versão não possui interface web, autenticação nem painel de
+histórico. Ela foi estruturada para que essas entregas possam ser adicionadas
+como adaptadores externos, preservando o pipeline e os casos de uso atuais.
 
-O NewFlow pode ser implantado utilizando **Render**.
+## Licença
 
-Arquitetura de produção:
-
-```text
-             GitHub
-                │
-                ▼
-             Render
-                │
-       ┌────────┴────────┐
-       ▼                 ▼
-   Web Service       PostgreSQL
-       │
-       ▼
-    NewFlow
-       │
-       ▼
-   OpenAI API
-```
-
----
-
-## Deploy com Render
-
-Fluxo básico:
-
-```text
-GitHub Repository
-       ↓
-Create Web Service
-       ↓
-Configure Environment Variables
-       ↓
-Configure Build Command
-       ↓
-Configure Start Command
-       ↓
-Deploy
-```
-
-Variáveis sensíveis devem ser configuradas diretamente no ambiente da aplicação.
-
-### Job diário no Render
-
-O Blueprint também define o Cron Job `newflow-ai-daily-digest`. Ele executa
-`python -m app.jobs.daily_digest` uma vez por dia às **12:00 UTC** e encerra
-após enviar o digest.
-
-Cada execução reserva o envio por destinatário e dia, registra os artigos
-incluídos e armazena o resultado como `sent` ou `failed`. Uma repetição do job
-no mesmo dia não reenvia o mesmo digest.
-
-Configure as variáveis abaixo diretamente no serviço de Cron Job no Render:
-
-```text
-DATABASE_URL
-SMTP_HOST
-SMTP_PORT
-SMTP_USERNAME
-SMTP_PASSWORD
-SMTP_SENDER
-DAILY_DIGEST_RECIPIENT
-DAILY_DIGEST_INTERESTS
-YOUTUBE_CHANNEL_IDS
-```
-
-`DAILY_DIGEST_INTERESTS` e `YOUTUBE_CHANNEL_IDS` usam valores separados por
-vírgula. O segundo é opcional. Para testar uma execução fora do horário, use
-**Trigger Run** na página do Cron Job no painel do Render.
-
----
-
-# 🔒 Segurança
-
-Boas práticas adotadas:
-
-* API Keys armazenadas em variáveis de ambiente.
-* `.env` ignorado pelo Git.
-* Não armazenar credenciais no código.
-* Validação das entradas.
-* Tratamento de exceções.
-* Controle de acesso ao banco.
-* Separação entre desenvolvimento e produção.
-
----
-
-# 📈 Evoluções planejadas
-
-O NewFlow foi inicialmente desenvolvido como um agregador de notícias, mas sua arquitetura permite evoluções futuras.
-
-### Roadmap
-
-* [x] Coleta de conteúdos
-* [x] Pipeline de processamento
-* [x] Integração com IA
-* [x] PostgreSQL
-* [x] Geração de resumos
-* [x] Classificação de conteúdos
-* [x] Perfil de usuário
-* [x] Daily Digest
-* [x] Envio de e-mail
-* [x] Docker
-* [ ] Interface web
-* [ ] Autenticação
-* [ ] Dashboard
-* [ ] Busca inteligente
-* [ ] Embeddings
-* [ ] RAG
-* [ ] PostgreSQL + pgvector
-* [ ] Recomendações inteligentes
-* [ ] Mais fontes de dados
-* [ ] Observabilidade
-* [ ] CI/CD
-* [ ] Testes de integração
-* [ ] Escalabilidade horizontal
-
----
-
-# 💡 Possíveis evoluções de arquitetura
-
-Em uma segunda fase, o NewFlow poderá evoluir para:
-
-```text
-                    ┌───────────────┐
-                    │    Sources    │
-                    └───────┬───────┘
-                            ↓
-                    ┌───────────────┐
-                    │   Collector   │
-                    └───────┬───────┘
-                            ↓
-                    ┌───────────────┐
-                    │ AI Processing │
-                    └───────┬───────┘
-                            ↓
-                 ┌──────────────────────┐
-                 │ PostgreSQL + pgvector│
-                 └──────────┬───────────┘
-                            ↓
-                    ┌───────────────┐
-                    │   RAG Agent   │
-                    └───────┬───────┘
-                            ↓
-                 ┌──────────┴──────────┐
-                 ↓                     ↓
-          ┌─────────────┐       ┌─────────────┐
-          │  Dashboard  │       │    Email    │
-          └─────────────┘       └─────────────┘
-```
-
----
-
-# 📚 Conceitos demonstrados
-
-Este projeto demonstra conhecimentos em:
-
-### Backend
-
-* APIs
-* Flask
-* Python
-* REST
-* Modularização
-* Integração de serviços
-
-### Inteligência Artificial
-
-* LLMs
-* Prompt Engineering
-* Classificação
-* Sumarização
-* Agentes
-* Personalização
-
-### Dados
-
-* PostgreSQL
-* SQL
-* Data Processing
-* Pipelines
-* Normalização
-
-### DevOps
-
-* Docker
-* Docker Compose
-* Environment Variables
-* Deploy
-* Cloud Infrastructure
-
-### Software Engineering
-
-* Arquitetura
-* Separação de responsabilidades
-* Testes
-* Tratamento de erros
-* Versionamento
-* Código modular
-
----
-
-# 🗺️ Fluxo completo
-
-```text
-                 ┌─────────────┐
-                 │   Sources   │
-                 └──────┬──────┘
-                        ↓
-                 ┌─────────────┐
-                 │  Scrapers   │
-                 └──────┬──────┘
-                        ↓
-                 ┌─────────────┐
-                 │  Pipeline   │
-                 └──────┬──────┘
-                        ↓
-                 ┌─────────────┐
-                 │ PostgreSQL  │
-                 └──────┬──────┘
-                        ↓
-                 ┌─────────────┐
-                 │     LLM     │
-                 └──────┬──────┘
-                        ↓
-              ┌───────────────────┐
-              │ Classification    │
-              │ + Summarization   │
-              └─────────┬─────────┘
-                        ↓
-                 ┌─────────────┐
-                 │ User Profile│
-                 └──────┬──────┘
-                        ↓
-                 ┌─────────────┐
-                 │ Aggregator  │
-                 │    Agent    │
-                 └──────┬──────┘
-                        ↓
-                 ┌─────────────┐
-                 │ Daily Digest│
-                 └──────┬──────┘
-                        ↓
-                 ┌─────────────┐
-                 │ Email Agent │
-                 └──────┬──────┘
-                        ↓
-                      User
-```
-
----
-
-# 📸 Screenshots
-
-> Em desenvolvimento.
-
-Futuramente serão adicionadas imagens da aplicação, incluindo:
-
-* Dashboard
-* Notícias
-* Resumos
-* Perfil do usuário
-* Daily Digest
-* Monitoramento do pipeline
-
----
-
-# 🔗 Projeto
-
-**NewFlow — AI News Aggregator**
-
-Status:
-
-> 🚧 Em desenvolvimento
-
----
-
-# 📄 Licença
-
-Este projeto está licenciado sob a **MIT License**.
-
-Consulte o arquivo [`LICENSE`](LICENSE) para mais informações.
-
----
-
-# 👨‍💻 Autor
-
-Desenvolvido por **Lucas Estrela**.
-
-<p align="left">
-  <a href="https://github.com/LucasEstrela-FullStack">
-    <img src="https://img.shields.io/badge/GitHub-LucasEstrela--FullStack-181717?style=for-the-badge&logo=github" alt="GitHub">
-  </a>
-</p>
-
----
-
-<p align="center">
-  🌊 <strong>NewFlow</strong>
-  <br>
-  <sub>Transformando informação em inteligência.</sub>
-</p>
+Distribuído sob a [licença MIT](LICENSE).
