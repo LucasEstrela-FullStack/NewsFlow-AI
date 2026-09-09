@@ -44,11 +44,14 @@ class EmptyVideoSource:
         return []
 
 
-def test_generate_prioritizes_articles_matching_the_user_profile() -> None:
+def test_generate_prioritizes_articles_matching_the_user_profile(
+    article_persister,
+) -> None:
     collection_pipeline = CollectionPipeline(
         news_sources=[StaticNewsSource()],
         video_source=EmptyVideoSource(),
         youtube_channel_ids=[],
+        article_persister=article_persister,
     )
     service = PersonalizedDailyDigestService(
         collection_pipeline=collection_pipeline,

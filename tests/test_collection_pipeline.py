@@ -26,7 +26,7 @@ class FakeVideoSource:
         return self._videos
 
 
-def test_collect_returns_content_from_all_configured_sources() -> None:
+def test_collect_returns_content_from_all_configured_sources(article_persister) -> None:
     published_at = datetime(2026, 9, 8, 12, 0, tzinfo=UTC)
     openai_article = NewsArticle(
         article_id="openai-article",
@@ -62,6 +62,7 @@ def test_collect_returns_content_from_all_configured_sources() -> None:
         ],
         video_source=video_source,
         youtube_channel_ids=["channel-id"],
+        article_persister=article_persister,
     )
 
     batch = pipeline.collect()
@@ -71,3 +72,4 @@ def test_collect_returns_content_from_all_configured_sources() -> None:
         videos=[youtube_video],
     )
     assert video_source.channel_ids == ["channel-id"]
+    assert article_persister.persist([openai_article, anthropic_article]) == 0
