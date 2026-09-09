@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from app.aggregator import ArticleAggregator, UserProfile
 from app.digest import DigestService
 from app.email import DigestEmailComposer, EmailAgent, EmailMessage
+from app.digest_delivery_history import DigestDeliveryReservation
 from app.news import NewsArticle
 from app.personalized_digest import PersonalizedDailyDigestService
 from app.personalized_digest_delivery import PersonalizedDigestEmailDeliveryService
@@ -56,6 +57,19 @@ class InMemoryEmailSender:
         self.delivered_messages.append(message)
 
 
+class InMemoryDigestDeliveryHistory:
+    """History boundary substitute for personalized delivery tests."""
+
+    def reserve(self, *_: object) -> DigestDeliveryReservation:
+        return DigestDeliveryReservation(identifier=1)
+
+    def mark_sent(self, _: DigestDeliveryReservation) -> None:
+        pass
+
+    def mark_failed(self, _: DigestDeliveryReservation) -> None:
+        pass
+
+
 def test_send_delivers_a_digest_personalized_for_the_recipient(
     article_persister,
 ) -> None:
@@ -75,6 +89,7 @@ def test_send_delivers_a_digest_personalized_for_the_recipient(
         digest_generator=digest_generator,
         email_composer=DigestEmailComposer(),
         email_agent=EmailAgent(sender=sender),
+        delivery_history=InMemoryDigestDeliveryHistory(),
     )
 
     service.send(

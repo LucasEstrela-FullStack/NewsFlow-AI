@@ -745,6 +745,10 @@ O Blueprint também define o Cron Job `newflow-ai-daily-digest`. Ele executa
 `python -m app.jobs.daily_digest` uma vez por dia às **12:00 UTC** e encerra
 após enviar o digest.
 
+Cada execução reserva o envio por destinatário e dia, registra os artigos
+incluídos e armazena o resultado como `sent` ou `failed`. Uma repetição do job
+no mesmo dia não reenvia o mesmo digest.
+
 Configure as variáveis abaixo diretamente no serviço de Cron Job no Render:
 
 ```text

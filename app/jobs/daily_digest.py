@@ -8,8 +8,10 @@ from app.article_persistence import ArticlePersistenceService
 from app.daily_digest_job import DailyDigestJob
 from app.database import (
     SqlAlchemyArticleRepository,
+    SqlAlchemyDigestDeliveryHistory,
     create_article_table,
     create_database_engine,
+    create_digest_delivery_tables,
 )
 from app.digest import DigestService
 from app.email import DigestEmailComposer, EmailAgent, SmtpEmailSender, SmtpSettings
@@ -31,6 +33,7 @@ def create_daily_digest_job(settings: Settings) -> DailyDigestJob:
 
     database_engine = create_database_engine(settings.database_url)
     create_article_table(database_engine)
+    create_digest_delivery_tables(database_engine)
 
     collection_pipeline = CollectionPipeline(
         news_sources=(OpenAINewsScraper(), AnthropicNewsScraper()),
@@ -62,6 +65,7 @@ def create_daily_digest_job(settings: Settings) -> DailyDigestJob:
                 )
             )
         ),
+        delivery_history=SqlAlchemyDigestDeliveryHistory(database_engine),
     )
 
     return DailyDigestJob(
