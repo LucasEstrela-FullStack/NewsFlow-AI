@@ -18,6 +18,11 @@ class Settings:
     host: str = "127.0.0.1"
     port: int = 5000
     database_url: str = ""
+    smtp_host: str = ""
+    smtp_port: int = 465
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_sender: str = ""
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -29,8 +34,13 @@ class Settings:
             debug=_read_boolean("NEWFLOW_DEBUG", default=False),
             secret_key=os.getenv("SECRET_KEY", "development-only"),
             host=os.getenv("HOST", "127.0.0.1"),
-            port=_read_port(),
+            port=_read_port("PORT", default=5000),
             database_url=os.getenv("DATABASE_URL", ""),
+            smtp_host=os.getenv("SMTP_HOST", ""),
+            smtp_port=_read_port("SMTP_PORT", default=465),
+            smtp_username=os.getenv("SMTP_USERNAME", ""),
+            smtp_password=os.getenv("SMTP_PASSWORD", ""),
+            smtp_sender=os.getenv("SMTP_SENDER", ""),
         )
 
 
@@ -42,15 +52,15 @@ def _read_boolean(name: str, *, default: bool) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _read_port() -> int:
-    value = os.getenv("PORT", "5000")
+def _read_port(name: str, *, default: int) -> int:
+    value = os.getenv(name, str(default))
 
     try:
         port = int(value)
     except ValueError as error:
-        raise ValueError("PORT must be an integer") from error
+        raise ValueError(f"{name} must be an integer") from error
 
     if not 1 <= port <= 65_535:
-        raise ValueError("PORT must be between 1 and 65535")
+        raise ValueError(f"{name} must be between 1 and 65535")
 
     return port
