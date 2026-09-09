@@ -56,11 +56,14 @@ class InMemoryEmailSender:
         self.delivered_messages.append(message)
 
 
-def test_send_delivers_a_digest_personalized_for_the_recipient() -> None:
+def test_send_delivers_a_digest_personalized_for_the_recipient(
+    article_persister,
+) -> None:
     collection_pipeline = CollectionPipeline(
         news_sources=[StaticNewsSource()],
         video_source=EmptyVideoSource(),
         youtube_channel_ids=[],
+        article_persister=article_persister,
     )
     digest_generator = PersonalizedDailyDigestService(
         collection_pipeline=collection_pipeline,

@@ -22,6 +22,12 @@ class VideoSource(Protocol):
     def collect_recent_videos(self, channel_ids: Sequence[str]) -> list[YouTubeVideo]: ...
 
 
+class ArticlePersister(Protocol):
+    """Use case capable of persisting collected articles."""
+
+    def persist(self, articles: list[NewsArticle]) -> int: ...
+
+
 @dataclass(frozen=True, slots=True)
 class CollectionBatch:
     """Content collected during one pipeline execution."""
@@ -38,10 +44,12 @@ class CollectionPipeline:
         news_sources: Sequence[NewsSource],
         video_source: VideoSource,
         youtube_channel_ids: Sequence[str],
+        article_persister: ArticlePersister,
     ) -> None:
         self._news_sources = news_sources
         self._video_source = video_source
         self._youtube_channel_ids = youtube_channel_ids
+        self._article_persister = article_persister
 
     def collect(self) -> CollectionBatch:
         articles = [
@@ -49,6 +57,7 @@ class CollectionPipeline:
             for source in self._news_sources
             for article in source.fetch_recent_articles()
         ]
+        self._article_persister.persist(articles)
         videos = self._video_source.collect_recent_videos(self._youtube_channel_ids)
 
         return CollectionBatch(articles=articles, videos=videos)

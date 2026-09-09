@@ -34,11 +34,12 @@ class EmptyVideoSource:
         return []
 
 
-def test_generate_collects_articles_and_creates_the_daily_digest() -> None:
+def test_generate_collects_articles_and_creates_the_daily_digest(article_persister) -> None:
     collection_pipeline = CollectionPipeline(
         news_sources=[StaticNewsSource()],
         video_source=EmptyVideoSource(),
         youtube_channel_ids=[],
+        article_persister=article_persister,
     )
     service = DailyDigestService(
         collection_pipeline=collection_pipeline,
