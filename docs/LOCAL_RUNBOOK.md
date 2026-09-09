@@ -167,6 +167,7 @@ uma falha de SMTP fica registrada como `failed` e pode ser tentada novamente.
 ```bash
 python -m pytest
 python -m compileall -q app config.py
+python -m ruff check .
 git diff --check
 ```
 
@@ -178,6 +179,7 @@ requests e alterações na `main`.
 
 - [ ] `python -m pytest` conclui sem falhas.
 - [ ] `python -m compileall -q app config.py` conclui sem erros.
+- [ ] `python -m ruff check .` não encontra violações de lint.
 - [ ] `git diff --check` não encontra espaços ou quebras inválidas.
 - [ ] `.env`, credenciais e URLs com senhas não aparecem no diff.
 - [ ] O comportamento documentado corresponde ao código alterado.
