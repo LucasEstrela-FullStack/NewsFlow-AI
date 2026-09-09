@@ -61,4 +61,7 @@ def test_generate_prioritizes_articles_matching_the_user_profile(
 
     digest = service.generate(UserProfile(interests=("agents",)))
 
-    assert digest.index("# Reliable agents research") < digest.index("# Company update")
+    assert digest.article_ids == ("agent-research", "company-update")
+    assert digest.content.index("# Reliable agents research") < digest.content.index(
+        "# Company update"
+    )

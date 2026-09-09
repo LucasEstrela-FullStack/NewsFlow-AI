@@ -1,6 +1,7 @@
 """Personalized daily digest generation use case."""
 
 from app.aggregator import UserProfile
+from app.personalized_digest.models import GeneratedDigest
 from app.personalized_digest.ports import ArticleCollector, ArticleRanker, DigestCreator
 
 __all__ = ["PersonalizedDailyDigestService"]
@@ -19,7 +20,7 @@ class PersonalizedDailyDigestService:
         self._article_aggregator = article_aggregator
         self._digest_service = digest_service
 
-    def generate(self, profile: UserProfile) -> str:
+    def generate(self, profile: UserProfile) -> GeneratedDigest:
         """Collect, prioritize, and render articles for the supplied profile."""
         collection_batch = self._collection_pipeline.collect()
         ranked_articles = self._article_aggregator.rank(
@@ -27,4 +28,7 @@ class PersonalizedDailyDigestService:
             profile,
         )
 
-        return self._digest_service.create(ranked_articles)
+        return GeneratedDigest(
+            content=self._digest_service.create(ranked_articles),
+            article_ids=tuple(article.article_id for article in ranked_articles),
+        )

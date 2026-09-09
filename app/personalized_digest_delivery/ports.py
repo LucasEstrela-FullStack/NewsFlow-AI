@@ -4,6 +4,7 @@ from typing import Protocol
 
 from app.aggregator import UserProfile
 from app.email.models import EmailMessage
+from app.personalized_digest.models import GeneratedDigest
 
 __all__ = ["EmailComposer", "EmailDeliveryAgent", "PersonalizedDigestGenerator"]
 
@@ -11,7 +12,7 @@ __all__ = ["EmailComposer", "EmailDeliveryAgent", "PersonalizedDigestGenerator"]
 class PersonalizedDigestGenerator(Protocol):
     """Generate a Markdown digest for a user profile."""
 
-    def generate(self, profile: UserProfile) -> str: ...
+    def generate(self, profile: UserProfile) -> GeneratedDigest: ...
 
 
 class EmailComposer(Protocol):
